@@ -1,5 +1,9 @@
 # wiewarm-data
 
+## BACK WITH LIVE DATA SOON
+
+The export is currently suspended due to a technical issue and should return soon.
+
 ## About the Data
 
 Full dataset of the wiewarm.ch website, containing many millions of temperature points from pools, rivers and lakes all over Switzerland.
