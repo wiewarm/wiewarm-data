@@ -80,10 +80,9 @@ fi
   fi
 
   psql "${PSQL_ARGS[@]}" -X -v ON_ERROR_STOP=1 <<SQL
-\pset footer off
-\copy (
+COPY (
   select
-    t.datum as "datum",
+    to_char(t.datum, 'YYYY-MM-DD HH24:MI:SS') as "datum",
     b.id as "badid",
     b.name as "bad",
     b.adresse1 as "adresse1",
@@ -94,7 +93,7 @@ fi
     be.id as "beckenid",
     be.name as "becken",
     kt.bezeichnung as "typ",
-    t.wert / 10.0 as "temperatur"
+    trunc(t.wert / 10.0, 1) as "temperatur"
   from bad b
   join becken be on b.id = be.badid
   join temperatur t on be.id = t.beckenid
@@ -102,7 +101,7 @@ fi
   where t.datum >= '${FROM_DATE}'
     and t.datum < '${TO_DATE}'
   order by 1, 3
-) to stdout with (format csv, header false, delimiter ';')
+) TO STDOUT WITH (FORMAT csv, HEADER false, DELIMITER ';');
 SQL
 } > "$TMP_FILE"
 
