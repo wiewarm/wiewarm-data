@@ -85,14 +85,14 @@ COPY (
     to_char(t.datum, 'YYYY-MM-DD HH24:MI:SS') as "datum",
     b.id as "badid",
     b.name as "bad",
-    b.adresse1 as "adresse1",
-    b.adresse2 as "adresse2",
-    b.ort as "ort",
-    b.plz as "plz",
-    b.kanton as "kanton",
+    nullif(b.adresse1, '') as "adresse1",
+    nullif(b.adresse2, '') as "adresse2",
+    nullif(b.ort, '') as "ort",
+    nullif(b.plz, '') as "plz",
+    nullif(b.kanton, '') as "kanton",
     be.id as "beckenid",
     be.name as "becken",
-    kt.bezeichnung as "typ",
+    nullif(kt.bezeichnung, '') as "typ",
     trunc(t.wert / 10.0, 1) as "temperatur"
   from bad b
   join becken be on b.id = be.badid
