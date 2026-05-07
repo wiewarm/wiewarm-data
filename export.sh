@@ -11,9 +11,10 @@ Usage:
 Behavior:
   - Defaults to the current UTC year if YEAR is omitted
   - Writes ./wiewarm-YEAR.csv
-  - Uses standard libpq environment variables for connection details:
-      PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD
-    or DATABASE_URL / PGSERVICE if you already use one
+  - Uses DATABASE_URL / PGSERVICE if set
+  - Otherwise uses standard libpq environment variables
+  - If present, also reads defaults from ../.env.sh and ../.secrets.sh
+  - Defaults PGHOST to localhost
 
 Example:
   PGHOST=db.example.org PGDATABASE=wiewarm PGUSER=postgres PGPASSWORD=secret \
@@ -37,14 +38,36 @@ FROM_DATE="${YEAR}-01-01"
 TO_DATE="$((YEAR + 1))-01-01"
 OUT_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/wiewarm-${YEAR}.csv"
 TMP_FILE="${OUT_FILE}.tmp"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [[ -f "${SCRIPT_DIR}/../.env.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "${SCRIPT_DIR}/../.env.sh"
+fi
+
+if [[ -f "${SCRIPT_DIR}/../.secrets.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "${SCRIPT_DIR}/../.secrets.sh"
+fi
+
+export PGHOST="${PGHOST:-localhost}"
+export PGPORT="${PGPORT:-5432}"
+export PGDATABASE="${PGDATABASE:-${ENV_POSTGRES_DB:-}}"
+export PGUSER="${PGUSER:-${SECRET_POSTGRES_USER:-}}"
+export PGPASSWORD="${PGPASSWORD:-${SECRET_POSTGRES_PASSWORD:-}}"
 
 cleanup() {
   rm -f "$TMP_FILE"
 }
 trap cleanup EXIT
 
-if [[ -z "${PGDATABASE:-}" && -z "${DATABASE_URL:-}" && -z "${PGSERVICE:-}" ]]; then
-  echo "ERROR: set PGDATABASE (or DATABASE_URL / PGSERVICE) plus the usual PostgreSQL connection env vars before running this script." >&2
+if [[ -z "${DATABASE_URL:-}" && -z "${PGSERVICE:-}" && -z "${PGDATABASE:-}" ]]; then
+  echo "ERROR: no database configured. Set DATABASE_URL, PGSERVICE, PGDATABASE, or ENV_POSTGRES_DB." >&2
+  exit 1
+fi
+
+if [[ -z "${DATABASE_URL:-}" && -z "${PGSERVICE:-}" && ( -z "${PGUSER:-}" || -z "${PGPASSWORD:-}" ) ]]; then
+  echo "ERROR: missing PostgreSQL credentials. Set PGUSER/PGPASSWORD or SECRET_POSTGRES_USER/SECRET_POSTGRES_PASSWORD." >&2
   exit 1
 fi
 
