@@ -79,9 +79,7 @@ fi
     PSQL_ARGS+=("${DATABASE_URL}")
   fi
 
-  psql "${PSQL_ARGS[@]}" -X -v ON_ERROR_STOP=1 \
-    -v from_date="'${FROM_DATE}'" \
-    -v to_date="'${TO_DATE}'" <<'SQL'
+  psql "${PSQL_ARGS[@]}" -X -v ON_ERROR_STOP=1 <<SQL
 \pset footer off
 \copy (
   select
@@ -101,8 +99,8 @@ fi
   join becken be on b.id = be.badid
   join temperatur t on be.id = t.beckenid
   left join katalog kt on be.typ = kt.itemid and kt.gruppe = 1
-  where t.datum >= :from_date
-    and t.datum < :to_date
+  where t.datum >= '${FROM_DATE}'
+    and t.datum < '${TO_DATE}'
   order by 1, 3
 ) to stdout with (format csv, header false, delimiter ';')
 SQL
